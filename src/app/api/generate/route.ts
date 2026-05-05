@@ -26,6 +26,7 @@ export async function POST(request: Request) {
       headers: {
         "Content-Type": "application/json",
         "Accept": "application/json",
+        "User-Agent": "OctoladeAmplify/1.0 (Next.js Edge Runtime)"
       },
       body: JSON.stringify(body),
       signal: controller.signal,
@@ -33,27 +34,36 @@ export async function POST(request: Request) {
 
     clearTimeout(timeoutId);
 
+    const rawText = await response.text();
+    const duration = Date.now() - startTime;
+
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error("n8n error:", response.status, errorText);
-      return NextResponse.json({ error: "Failed to generate content", details: errorText }, { status: response.status });
+      console.error(`n8n error (${response.status}) after ${duration}ms:`, rawText);
+      return NextResponse.json({ 
+        error: "n8n returned an error", 
+        status: response.status,
+        details: rawText 
+      }, { status: response.status });
     }
 
-    const contentType = response.headers.get("content-type");
-    if (contentType && contentType.includes("application/json")) {
-      const data = await response.json();
-      console.log("n8n success response (JSON):", data);
+    if (!rawText || rawText.trim() === "") {
+      console.error(`n8n returned empty response after ${duration}ms`);
+      return NextResponse.json({ 
+        error: "n8n returned an empty response",
+        details: "The webhook was triggered but did not return any data. Check n8n workflow completion."
+      }, { status: 502 });
+    }
+
+    try {
+      const data = JSON.parse(rawText);
+      console.log(`n8n success after ${duration}ms:`, data);
       return NextResponse.json(data);
-    } else {
-      const textData = await response.text();
-      console.log("n8n success response (Text):", textData);
-      // If it's not JSON, we might want to try parsing it anyway or return it as is
-      try {
-        const parsedData = JSON.parse(textData);
-        return NextResponse.json(parsedData);
-      } catch (e) {
-        return NextResponse.json({ error: "Invalid JSON response from n8n", details: textData }, { status: 500 });
-      }
+    } catch (e) {
+      console.error(`Failed to parse n8n response as JSON after ${duration}ms:`, rawText);
+      return NextResponse.json({ 
+        error: "Invalid JSON response from n8n", 
+        details: rawText 
+      }, { status: 500 });
     }
   } catch (error: any) {
     const duration = Date.now() - startTime;
@@ -61,7 +71,7 @@ export async function POST(request: Request) {
     
     let errorType = "Internal Server Error";
     if (error.name === 'AbortError') {
-      errorType = "Request Timeout (Function took too long)";
+      errorType = "Request Timeout (n8n took too long)";
     }
 
     return NextResponse.json({ 
