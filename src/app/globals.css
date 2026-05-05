@@ -1,0 +1,41 @@
+@import "tailwindcss";
+@import url('https://api.fontshare.com/v2/css?f[]=satoshi@400&display=swap');
+
+@theme {
+  --font-sans: "Satoshi", sans-serif;
+}
+
+@keyframes custom-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-custom-spin {
+  animation: custom-spin 1s linear infinite;
+}
+
+:root {
+  --background: #000000;
+  --foreground: #ffffff;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #000000;
+    --foreground: #ffffff;
+  }
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: "Satoshi", sans-serif;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 19px;
+  overflow-x: hidden;
+}
+
+.bg-grid-white {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='32' height='32' fill='none' stroke='rgb(99 102 241 / 0.04)'%3E%3Cpath d='M0 .5H31.5V32'/%3E%3C/svg%3E");
+}
