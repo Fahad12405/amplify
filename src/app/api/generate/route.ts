@@ -1,9 +1,14 @@
 import { NextResponse } from "next/server";
 
+export const maxDuration = 60; // seconds — must match vercel.json
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
     console.log("Generate API Request Body:", body);
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 55000); // 55s client-side guard
 
     const response = await fetch("https://n8n.octolade.com/webhook/806354d1-290e-441b-8b31-939d55c3bc05", {
       method: "POST",
@@ -12,7 +17,10 @@ export async function POST(request: Request) {
         "Accept": "application/json",
       },
       body: JSON.stringify(body),
+      signal: controller.signal,
     });
+
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       const errorText = await response.text();
